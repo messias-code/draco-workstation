@@ -142,10 +142,20 @@ def render_markdown(report: HostReport, cfg) -> str:
             "Exploit-DB (searchsploit), a API do NIST/NVD, o Vulners e a execução de "
             "templates do Nuclei."
         )
+        vulns = report.sorted_vulnerabilities()
+        
+        # Summary counts
+        if vulns:
+            counts = {}
+            for v in vulns:
+                sev = v.normalized_severity()
+                counts[sev] = counts.get(sev, 0) + 1
+            summary = ", ".join(f"**{count} {sev.upper()}**" for sev, count in sorted(counts.items()))
+            lines.append(f"\n**Resumo de Impacto**: Foram identificadas {len(vulns)} vulnerabilidades ({summary}).")
+            
         lines.append("")
         lines.append("| Porta / Serviço | Código da Falha | Severidade | Fonte | Descrição Técnica |")
         lines.append("|---|---|---|---|---|")
-        vulns = report.sorted_vulnerabilities()
         for v in vulns:
             sev = v.normalized_severity()
             sev_emoji = _emoji(cfg, SEVERITY_EMOJI, sev, "")
