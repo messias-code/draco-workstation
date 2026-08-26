@@ -241,6 +241,4 @@ def write_report(report: HostReport, cfg, logger=None) -> str:
     content = render_markdown(report, cfg)
     with open(path, "w", encoding="utf-8") as fh:
         fh.write(content)
-    if logger:
-        logger.info(f"Arquivo salvo em: {path}")
     return path

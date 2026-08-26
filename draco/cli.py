@@ -129,8 +129,6 @@ def main(argv=None) -> int:
         logger.close()
         return 130
 
-    for path in paths:
-        logger.info(f"Relatório pronto: {path}")
     logger.info("Consolidação concluída com sucesso.")
     logger.close()
     return 0
