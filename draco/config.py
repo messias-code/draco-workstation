@@ -42,12 +42,6 @@ DEFAULTS: dict[str, Any] = {
             "ping": "ping",
         },
     },
-    "scope": {
-        "require_authorization_flag": False,
-        "enforce_allowlist": False,
-        "allowlist": [],
-        "denylist": [],                      # opcional: alvos a bloquear (IP/CIDR/domínio)
-    },
     "discovery": {
         "tcp_connect_ports": [80, 443, 22, 21, 3389],
         "icmp_count": 2,

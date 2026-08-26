@@ -98,76 +98,13 @@ def resolve_ip(target: Target) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Gate de escopo / autorização
-# ---------------------------------------------------------------------------
-def _match_scope_entry(entry: str, target: Target) -> bool:
-    """True se `entry` (IP, CIDR ou domínio) casa com o alvo."""
-    entry = entry.strip()
-    if not entry:
-        return False
-    # CIDR / rede
-    if "/" in entry:
-        try:
-            net = ipaddress.ip_network(entry, strict=False)
-            for candidate in (target.ip, target.raw):
-                if candidate and is_valid_ip(candidate) and ipaddress.ip_address(candidate) in net:
-                    return True
-        except ValueError:
-            return False
-        return False
-    # IP exato
-    if is_valid_ip(entry):
-        return entry in (target.ip, target.raw)
-    # Domínio: casa exato ou subdomínio
-    host = target.raw.lower()
-    entry_l = entry.lower()
-    return host == entry_l or host.endswith("." + entry_l)
-
-
-def check_scope(target: Target, cfg, authorized_flag: bool) -> Target:
-    """Aplica allowlist/denylist e a flag de autorização. Preenche in_scope/scope_reason."""
-    scope = cfg["scope"]
-
-    # 1) Flag global de autorização
-    if scope.get("require_authorization_flag", True) and not authorized_flag:
-        target.in_scope = False
-        target.scope_reason = "faltou --i-am-authorized (autorização explícita de escopo)"
-        return target
-
-    # 2) Denylist tem precedência
-    for entry in scope.get("denylist", []) or []:
-        if _match_scope_entry(str(entry), target):
-            target.in_scope = False
-            target.scope_reason = f"alvo na denylist ({entry})"
-            return target
-
-    # 3) Allowlist
-    if scope.get("enforce_allowlist", True):
-        allow = scope.get("allowlist", []) or []
-        for entry in allow:
-            if _match_scope_entry(str(entry), target):
-                target.in_scope = True
-                target.scope_reason = f"autorizado pela allowlist ({entry})"
-                return target
-        target.in_scope = False
-        target.scope_reason = "fora da allowlist de escopo"
-        return target
-
-    # allowlist desabilitada => autorizado (não recomendado)
-    target.in_scope = True
-    target.scope_reason = "allowlist desabilitada (enforce_allowlist=false)"
-    return target
-
-
-# ---------------------------------------------------------------------------
 # Orquestração da ingestão
 # ---------------------------------------------------------------------------
-def ingest(path: str, cfg, authorized_flag: bool, logger=None) -> list[Target]:
+def ingest(path: str, cfg, authorized_flag: bool = True, logger=None) -> list[Target]:
     """Pipeline de ingestão completo.
 
-    Retorna a lista de alvos DENTRO do escopo. Alvos inválidos ou fora do
-    escopo são apenas registrados (não abortam o processo). Só aborta
-    (IngestError) quando não há NENHUM alvo válido a considerar.
+    Retorna a lista de alvos. Alvos inválidos (sintaxe errada) são
+    ignorados. Só aborta (IngestError) quando não há NENHUM alvo válido.
     """
     raw_entries = read_targets_file(path)  # pode levantar IngestError (fatal)
 
@@ -180,6 +117,7 @@ def ingest(path: str, cfg, authorized_flag: bool, logger=None) -> list[Target]:
             continue
         target = Target(raw=raw, kind=kind)
         resolve_ip(target)
+        target.in_scope = True
         valid.append(target)
         if logger:
             ipinfo = f" ({target.ip})" if target.ip and target.ip != raw else ""
@@ -188,15 +126,4 @@ def ingest(path: str, cfg, authorized_flag: bool, logger=None) -> list[Target]:
     if not valid:
         raise IngestError("Nenhum alvo com sintaxe válida em targets.txt.")
 
-    in_scope: list[Target] = []
-    for target in valid:
-        check_scope(target, cfg, authorized_flag)
-        if target.in_scope:
-            in_scope.append(target)
-            if logger:
-                logger.info(f"Escopo OK: {target.raw} — {target.scope_reason}")
-        else:
-            if logger:
-                logger.error(f"Alvo FORA DE ESCOPO abortado: {target.raw} — {target.scope_reason}")
-
-    return in_scope
+    return valid
