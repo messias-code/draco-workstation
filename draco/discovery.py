@@ -57,7 +57,7 @@ def _tcp_connect(host: str, cfg, logger=None) -> tuple[float | None, int | None]
     """Tenta connect() nas portas comuns. Retorna (tempo_ms, porta) do 1º sucesso."""
     dcfg = cfg["discovery"]
     ports = dcfg.get("tcp_connect_ports", [80, 443]) or []
-    timeout = float(dcfg["tcp"].get("timeout_seconds", 2))
+    timeout = float(dcfg.get("timeout_seconds", 2))
     for port in ports:
         try:
             start = time.monotonic()
