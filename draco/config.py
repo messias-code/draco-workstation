@@ -91,6 +91,10 @@ DEFAULTS: dict[str, Any] = {
     },
     "report": {
         "strategy_label": "Stealth Recon (SYN Scan / T2 / Packet Fragmentation)",
+        "gemini": {
+            "api_key": "",
+            "model": "gemini-flash-latest"
+        }
     },
 }
 
@@ -124,6 +128,10 @@ class Config:
             corr["nvd"]["api_key"] = os.environ.get("NVD_API_KEY", "")
         if not corr["vulners"].get("api_key"):
             corr["vulners"]["api_key"] = os.environ.get("VULNERS_API_KEY", "")
+            
+        rep = self.data["report"]
+        if not rep["gemini"].get("api_key"):
+            rep["gemini"]["api_key"] = os.environ.get("GEMINI_API_KEY", "")
 
     def __getitem__(self, key: str) -> Any:
         return self.data[key]

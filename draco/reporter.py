@@ -25,6 +25,7 @@ from .models import (
     SEVERITY_LABEL_PT,
     HostReport,
 )
+from .ai import translate_and_summarize
 
 
 def _emoji(cfg, table: dict, key: str, default: str = "") -> str:
@@ -156,6 +157,11 @@ def render_markdown(report: HostReport, cfg) -> str:
         lines.append("")
         lines.append("| Porta / Serviço | Código da Falha | Severidade | Fonte | Descrição Técnica |")
         lines.append("|---|---|---|---|---|")
+        gemini_cfg = cfg["report"].get("gemini", {})
+        gemini_key = gemini_cfg.get("api_key")
+        
+        # Opcional: barra de progresso se tiver Gemini e tiver muitas vulns
+        
         for v in vulns:
             sev = v.normalized_severity()
             sev_emoji = _emoji(cfg, SEVERITY_EMOJI, sev, "")
@@ -163,7 +169,12 @@ def render_markdown(report: HostReport, cfg) -> str:
             cvss_txt = f" (CVSS {v.cvss})" if v.cvss is not None else ""
             sev_cell = f"{sev_emoji} {sev_label}{cvss_txt}".strip()
             port_lbl = f"{v.port} / {v.service}" if v.port else (v.service or "-")
-            desc = _clean_cell(v.description or v.title or "-")
+            
+            raw_desc = v.description or v.title or "-"
+            if gemini_key and len(raw_desc) > 10:
+                raw_desc = translate_and_summarize(raw_desc, gemini_key, gemini_cfg.get("model", "gemini-flash-latest"))
+                
+            desc = _clean_cell(raw_desc)
             lines.append(
                 f"| {port_lbl} | {v.identifier} | {sev_cell} | {v.source} | {desc} |"
             )
