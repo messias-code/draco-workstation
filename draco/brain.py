@@ -72,6 +72,7 @@ def run_nuclei(urls: list[str], cfg, logger=None) -> dict:
     commands.append(" ".join(argv))
     if logger:
         logger.command(argv)
+        logger.info(f"Varredura web com Nuclei iniciada nas {len(urls)} URLs. Isso pode levar alguns minutos (rate_limit={ncfg.get('rate_limit', 150)})...")
     result = run(argv, timeout=ncfg.get("timeout_seconds", 900))
     if result.error:
         warnings.append(f"nuclei falhou: {result.error}")

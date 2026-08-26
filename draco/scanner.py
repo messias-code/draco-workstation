@@ -258,6 +258,7 @@ def run_nmap(target_ip, open_ports, cfg, logger=None, privileged=False) -> dict:
         argv = build_nmap_args(target_ip, open_ports, cfg, privileged, xml_out="-", evasion=evasion)
         if logger:
             logger.command(argv)
+            logger.info(f"Varredura profunda do Nmap (serviço/versão/OS/NSE) iniciada em {len(open_ports)} portas. Isso também pode levar alguns minutos...")
         res = run(argv, timeout=timeout)
         commands.append(" ".join(argv))
         if res.error:
