@@ -30,7 +30,7 @@ DEFAULTS: dict[str, Any] = {
         "targets_file": "targets.txt",
         "outputs_dir": "outputs",
         "logs_dir": "logs",
-        "report_filename": "{host}/relatorio_{datetime}.md",
+        "report_filename": "{ip}/relatorio_{datetime}.md",
     },
     "execution": {
         "host_concurrency": 4,               # nº de alvos auditados em paralelo
