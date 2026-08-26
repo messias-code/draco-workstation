@@ -102,7 +102,16 @@ class Config:
         return cfg
 
     def _apply_env_overrides(self) -> None:
-        """Chaves de API podem vir do ambiente."""
+        """Carrega do arquivo .env (se existir) e mapeia chaves de API."""
+        env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+        if os.path.exists(env_path):
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and "=" in line and not line.startswith("#"):
+                        k, v = line.split("=", 1)
+                        os.environ.setdefault(k.strip(), v.strip().strip("'\""))
+
         corr = self.data["correlation"]["online"]
         if not corr["nvd"].get("api_key"):
             corr["nvd"]["api_key"] = os.environ.get("NVD_API_KEY", "")
