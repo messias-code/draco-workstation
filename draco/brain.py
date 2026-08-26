@@ -103,8 +103,12 @@ def build_recommended_vectors(report: HostReport, cfg) -> list[str]:
     # Web
     if open_nums & {80, 443, 8080, 8443}:
         vectors.append(
-            "Enumeração Web Avançada: mapear diretórios e arquivos ocultos "
-            "(ex.: ffuf/gobuster) e revisar cabeçalhos de segurança HTTP ausentes."
+            "Spider/Crawling Profundo: realizar o mapeamento completo e recursivo da aplicação web "
+            "(como o spider do Google) para descobrir links, parâmetros, APIs escondidas e endpoints não autenticados."
+        )
+        vectors.append(
+            "Enumeração Web Avançada: mapear diretórios e arquivos ocultos (ex.: ffuf/gobuster) "
+            "e revisar cabeçalhos de segurança HTTP ausentes."
         )
         vectors.append(
             "Fingerprint de tecnologias web (ex.: whatweb) para confirmar "

@@ -79,7 +79,13 @@ def render_markdown(report: HostReport, cfg) -> str:
     if sections.get("host_overview", True):
         status_emoji = _emoji(cfg, {"UP": "🟢", "DOWN": "🔴"}, report.discovery.status)
         status_txt = f"{status_emoji} {report.discovery.status}".strip()
-        os_txt = report.os_best.name if report.os_best else "Indeterminado"
+        
+        if report.os_matches:
+            os_parts = [f"{m.name} ({m.accuracy}%)" if m.accuracy else m.name for m in report.os_matches]
+            os_txt = " <br> ".join(os_parts)
+        else:
+            os_txt = "Indeterminado"
+            
         lines.append("## 1. Status Geral do Host")
         lines.append("")
         lines.append("| Endereço IP | Status | Sistema Operacional Detectado | Tempo de Resposta | Método de Checagem |")
