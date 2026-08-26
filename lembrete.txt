@@ -1,0 +1,1 @@
+claude config set customSystemPrompt "$(cat ~/.mente_senior.md)"
