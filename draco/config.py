@@ -48,16 +48,16 @@ DEFAULTS: dict[str, Any] = {
         "timeout_seconds": 2,
     },
     "masscan": {
-        "rate": 2500,
+        "rate": 10000,
         "ports": {"tcp": "1-65535", "udp": "53,67,123,137,161,500,1900,5353"},
         "wait_seconds": 3,
         "timeout_seconds": 1800,
     },
     "nmap": {
-        "timing_template": 2,                # -T2 (furtivo). 0..5
+        "timing_template": 4,                # -T4 (Agressivo). 0..5
         "data_length": 24,                   # --data-length (padding)
-        "version_intensity": 5,              # --version-intensity
-        "decoys": "",                        # -D  (ex.: "RND:5")
+        "version_intensity": 9,              # Força bruta no versionamento máximo
+        "decoys": "RND:10",                  # -D (Ofuscação pesada com 10 IPs aleatórios)
         "mtu": None,                         # --mtu
         "source_port": None,                 # -g
         "spoof_mac": "",                     # --spoof-mac
