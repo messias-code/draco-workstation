@@ -19,6 +19,13 @@ from typing import Any
 # Defaults — SOMENTE valores de ajuste (nenhum liga/desliga de fluxo).
 # ---------------------------------------------------------------------------
 DEFAULTS: dict[str, Any] = {
+    "logging": {
+        "engine_tag": "DRACO-ENGINE",
+        "level": "INFO",
+        "console": True,
+        "color": True,
+        "timestamps": True,
+    },
     "paths": {
         "targets_file": "targets.txt",
         "outputs_dir": "outputs",
