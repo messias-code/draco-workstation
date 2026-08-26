@@ -30,7 +30,7 @@ DEFAULTS: dict[str, Any] = {
         "targets_file": "targets.txt",
         "outputs_dir": "outputs",
         "logs_dir": "logs",
-        "report_filename": "relatorio_draco_{ip}_{date}.md",
+        "report_filename": "{host}/relatorio_{datetime}.md",
     },
     "execution": {
         "host_concurrency": 4,               # nº de alvos auditados em paralelo
@@ -61,7 +61,7 @@ DEFAULTS: dict[str, Any] = {
         "mtu": None,                         # --mtu
         "source_port": None,                 # -g
         "spoof_mac": "",                     # --spoof-mac
-        "nse_scripts": ["vulners"],          # scripts NSE (a saída vira CVEs no relatório)
+        "nse_scripts": ["vulners", "vuln"],
         "timeout_seconds": 3600,
     },
     "brain": {
