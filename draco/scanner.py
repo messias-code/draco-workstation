@@ -39,9 +39,9 @@ def discover_ports(target_ip: str, cfg, logger=None, privileged: bool = False) -
     warnings: list[str] = []
 
     masscan_bin = cfg["execution"]["binaries"].get("masscan", "masscan")
-    use_masscan = mcfg.get("enabled", True) and privileged
+    use_masscan = privileged
 
-    if mcfg.get("enabled", True) and not privileged:
+    if not privileged:
         msg = "masscan exige privilégio (raw sockets); usando nmap connect scan p/ descoberta."
         warnings.append(msg)
         if logger:

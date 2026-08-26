@@ -26,8 +26,6 @@ except ImportError:  # pragma: no cover - requests está em requirements
 def searchsploit_lookup(query: str, cfg, logger=None) -> list[dict]:
     """Consulta a base local do Exploit-DB. Retorna registros crus de exploit."""
     scfg = cfg["correlation"]["searchsploit"]
-    if not scfg.get("enabled", True):
-        return []
     binary = cfg["execution"]["binaries"].get("searchsploit", "searchsploit")
     argv = [binary]
     if scfg.get("json", True):
@@ -77,7 +75,7 @@ def nvd_lookup(cpe: str, cfg, logger=None) -> list[Vulnerability]:
     """Consulta a API 2.0 do NIST NVD por CPE. Fail-open em qualquer erro."""
     online = cfg["correlation"]["online"]
     nvd = online["nvd"]
-    if not (online.get("enabled", True) and nvd.get("enabled", True)) or requests is None:
+    if requests is None:
         return []
 
     cpe23 = cpe22_to_23(cpe)
@@ -150,7 +148,7 @@ def vulners_lookup(product: str, version: str, cfg, logger=None) -> list[Vulnera
     """Consulta a API do Vulners por software/versão. Exige API key."""
     online = cfg["correlation"]["online"]
     vcfg = online["vulners"]
-    if not (online.get("enabled", True) and vcfg.get("enabled", True)) or requests is None:
+    if requests is None:
         return []
     if not vcfg.get("api_key"):
         if logger:

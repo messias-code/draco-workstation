@@ -79,8 +79,6 @@ def discover_host(host: str, cfg, logger=None) -> DiscoveryResult:
     result = DiscoveryResult()
     methods = cfg["discovery"].get("methods", {})
 
-    if not cfg["discovery"].get("enabled", True):
-        # Descoberta desligada => assume UP para permitir varredura forçada.
         result.status = "UP"
         result.methods_tried.append("desabilitada")
         result.methods_responded.append("descoberta-desabilitada")

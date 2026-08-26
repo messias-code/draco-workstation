@@ -32,7 +32,7 @@ def web_ports_open(ports: list[Port], cfg) -> list[Port]:
 
 def should_run_nuclei(ports: list[Port], cfg) -> bool:
     """True se o Nuclei deve ser disparado (há porta web aberta e está habilitado)."""
-    if not (cfg["brain"].get("run_nuclei_on_web", True) and cfg["nuclei"].get("enabled", True)):
+    if not (cfg["brain"].get("run_nuclei_on_web", True)):
         return False
     return bool(web_ports_open(ports, cfg))
 
