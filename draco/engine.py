@@ -112,7 +112,10 @@ def run_pipeline(targets: list[Target], cfg, logger=None) -> list[str]:
 
     def _one(t: Target) -> str:
         report = audit_target(t, cfg, logger)
-        return write_report(report, cfg, logger)
+        path = write_report(report, cfg, logger)
+        if logger:
+            logger.info(f"Arquivo salvo em: {path}")
+        return path
 
     if concurrency == 1 or len(targets) == 1:
         for t in targets:
