@@ -20,9 +20,8 @@ from .runner import run
 
 def _icmp_ping(host: str, cfg, logger=None) -> float | None:
     """Ping ICMP via binário do SO. Retorna tempo (ms) se respondeu, senão None."""
-    icmp = cfg["discovery"]["icmp"]
-    count = int(icmp.get("count", 2))
-    timeout = int(icmp.get("timeout_seconds", 2))
+    count = int(cfg["discovery"].get("icmp_count", 2))
+    timeout = int(cfg["discovery"].get("timeout_seconds", 2))
     ping_bin = cfg["execution"]["binaries"].get("ping", "ping")
     # -c count (nº de pacotes), -W timeout (Linux, segundos por resposta)
     argv = [ping_bin, "-c", str(count), "-W", str(timeout), host]
