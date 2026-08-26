@@ -78,8 +78,14 @@ DEFAULTS: dict[str, Any] = {
             "timeout_seconds": 10,
             "max_retries": 2,
             "fail_open": True,
-            "nvd": {"api_key": ""},
-            "vulners": {"api_key": ""}
+            "nvd": {
+                "base_url": "https://services.nvd.nist.gov/rest/json/cves/2.0",
+                "api_key": ""
+            },
+            "vulners": {
+                "base_url": "https://vulners.com/api/v3/burp/software/",
+                "api_key": ""
+            }
         }
     },
     "report": {
