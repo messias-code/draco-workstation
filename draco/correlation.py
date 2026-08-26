@@ -281,15 +281,26 @@ def _tag_port(vulns: list[Vulnerability], port: Port) -> list[Vulnerability]:
 
 
 def dedupe_vulnerabilities(vulns: list[Vulnerability]) -> list[Vulnerability]:
-    """Remove duplicatas por (porta, identificador), preferindo quem tem CVSS."""
+    """Remove duplicatas por (porta, identificador), fundindo os melhores dados."""
     best: dict[tuple, Vulnerability] = {}
     for v in vulns:
         key = (v.port, v.identifier)
         if key not in best:
             best[key] = v
             continue
-        # Mantém o registro mais informativo (com CVSS / descrição maior).
+            
         cur = best[key]
-        if (v.cvss is not None and cur.cvss is None) or (len(v.description) > len(cur.description)):
-            best[key] = v
+        # Preserva a maior descrição
+        if len(v.description) > len(cur.description):
+            cur.description = v.description
+        # Preserva a severidade original se o novo não tiver CVSS
+        if v.cvss is not None and cur.cvss is None:
+            cur.cvss = v.cvss
+            cur.severity = v.severity
+        # Preserva referências combinadas
+        cur.references = list(set(cur.references + v.references))
+        # Se for do searchsploit ou fonte mais rica, atualiza o título
+        if v.source != cur.source and "nse" not in v.source:
+             cur.title = v.title
+             cur.source = f"{cur.source} / {v.source}"
     return list(best.values())
