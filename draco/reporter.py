@@ -81,8 +81,14 @@ def render_markdown(report: HostReport, cfg) -> str:
         status_txt = f"{status_emoji} {report.discovery.status}".strip()
         
         if report.os_matches:
-            os_parts = [f"{m.name} ({m.accuracy}%)" if m.accuracy else m.name for m in report.os_matches]
-            os_txt = " <br> ".join(os_parts)
+            # Sort by accuracy descending to ensure we get the best guesses
+            sorted_matches = sorted(report.os_matches, key=lambda m: (m.accuracy or 0), reverse=True)
+            # Take only the top 3 matches to avoid breaking the markdown table visually
+            top_matches = sorted_matches[:3]
+            os_parts = [f"{m.name} ({m.accuracy}%)" if m.accuracy else m.name for m in top_matches]
+            if len(sorted_matches) > 3:
+                os_parts.append(f"... (+{len(sorted_matches) - 3} palpites)")
+            os_txt = "<br>".join(os_parts)
         else:
             os_txt = "Indeterminado"
             
