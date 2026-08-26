@@ -48,7 +48,7 @@ DEFAULTS: dict[str, Any] = {
         "timeout_seconds": 2,
     },
     "masscan": {
-        "rate": 500,
+        "rate": 2500,
         "ports": {"tcp": "1-65535", "udp": "53,67,123,137,161,500,1900,5353"},
         "wait_seconds": 3,
         "timeout_seconds": 1800,

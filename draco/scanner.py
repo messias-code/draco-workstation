@@ -88,6 +88,7 @@ def _masscan_discover(target_ip, cfg, masscan_bin, logger):
         commands.append(" ".join(argv))
         if logger:
             logger.command(argv)
+            logger.info(f"Varredura masscan ({proto}) em todas as portas iniciada. Isso leva alguns segundos (rate={mcfg.get('rate', 2500)})...")
         result = run(argv, timeout=mcfg.get("timeout_seconds", 1800))
         if result.error:
             warnings.append(f"masscan {proto} falhou: {result.error}")
