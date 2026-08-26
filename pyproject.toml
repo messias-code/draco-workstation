@@ -7,7 +7,7 @@ name = "draco-workstation"
 version = "0.1.0"
 description = "Backend CLI de auditoria de redes e mapeamento de vulnerabilidades (orquestração de nmap/masscan/nuclei/searchsploit)."
 requires-python = ">=3.9"
-dependencies = ["PyYAML>=6.0", "requests>=2.31"]
+dependencies = ["requests>=2.31"]
 
 [project.scripts]
 draco = "draco.cli:main"

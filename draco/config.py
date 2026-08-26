@@ -1,26 +1,18 @@
-"""Carga de configuração (config/draco.yaml).
+"""Carga de configuração.
 
 FILOSOFIA: o fluxo do Draco é FIXO. A config guarda apenas *valores de ajuste*
-(taxas, timings, portas, timeouts, caminhos, chaves de API) — nunca interruptores
-que liguem/desliguem etapas do pipeline. A ferramenta sempre segue a mesma esteira:
+(taxas, timings, portas, timeouts, caminhos, chaves de API).
+A ferramenta sempre segue a mesma esteira:
 descoberta → masscan → nmap → nuclei (se web) → CVEs → relatório.
 
-Os valores do usuário são mesclados sobre DEFAULTS seguros, de modo que um YAML
-incompleto nunca quebra o pipeline. Chaves de API podem vir do ambiente.
+Chaves de API podem vir do ambiente.
 """
 
 from __future__ import annotations
 
 import copy
 import os
-from typing import Any, Optional
-
-try:
-    import yaml
-except ImportError as exc:  # pragma: no cover - dependência declarada em requirements
-    raise ImportError(
-        "PyYAML é necessário. Instale com: pip install -r requirements.txt"
-    ) from exc
+from typing import Any
 
 
 # ---------------------------------------------------------------------------
@@ -44,6 +36,9 @@ DEFAULTS: dict[str, Any] = {
         },
     },
     "scope": {
+        "require_authorization_flag": False,
+        "enforce_allowlist": False,
+        "allowlist": [],
         "denylist": [],                      # opcional: alvos a bloquear (IP/CIDR/domínio)
     },
     "discovery": {
@@ -77,10 +72,15 @@ DEFAULTS: dict[str, Any] = {
         "timeout_seconds": 900,
     },
     "correlation": {
-        "online_timeout_seconds": 10,
-        "online_retries": 2,
-        "nvd_api_key": "",                   # opcional; ou env NVD_API_KEY
-        "vulners_api_key": "",               # opcional; ou env VULNERS_API_KEY (sem chave = pulado)
+        "searchsploit": {"enabled": True},
+        "online": {
+            "enabled": True,
+            "timeout_seconds": 10,
+            "max_retries": 2,
+            "fail_open": True,
+            "nvd": {"api_key": ""},
+            "vulners": {"api_key": ""}
+        }
     },
     "report": {
         "strategy_label": "Stealth Recon (SYN Scan / T2 / Packet Fragmentation)",
@@ -88,44 +88,26 @@ DEFAULTS: dict[str, Any] = {
 }
 
 
-def _deep_merge(base: dict, override: dict) -> dict:
-    """Mescla `override` sobre `base` recursivamente, sem mutar os originais."""
-    result = copy.deepcopy(base)
-    for key, value in (override or {}).items():
-        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
-            result[key] = _deep_merge(result[key], value)
-        else:
-            result[key] = copy.deepcopy(value)
-    return result
-
-
 class Config:
-    """Wrapper leve sobre o dicionário de configuração mesclado."""
+    """Wrapper leve sobre o dicionário de configuração."""
 
     def __init__(self, data: dict):
         self.data = data
 
     @classmethod
-    def load(cls, path: Optional[str] = None) -> "Config":
-        """Carrega o YAML e mescla sobre os DEFAULTS."""
-        user_data: dict = {}
-        if path and os.path.isfile(path):
-            with open(path, encoding="utf-8") as fh:
-                loaded = yaml.safe_load(fh) or {}
-            if not isinstance(loaded, dict):
-                raise ValueError(f"Config inválida em {path}: raiz não é um mapeamento.")
-            user_data = loaded
-        cfg = cls(_deep_merge(DEFAULTS, user_data))
+    def load(cls) -> "Config":
+        """Carrega os valores padrão e injeta variáveis de ambiente."""
+        cfg = cls(copy.deepcopy(DEFAULTS))
         cfg._apply_env_overrides()
         return cfg
 
     def _apply_env_overrides(self) -> None:
-        """Chaves de API podem vir do ambiente (se o YAML não as definiu)."""
-        corr = self.data["correlation"]
-        if not corr.get("nvd_api_key"):
-            corr["nvd_api_key"] = os.environ.get("NVD_API_KEY", "")
-        if not corr.get("vulners_api_key"):
-            corr["vulners_api_key"] = os.environ.get("VULNERS_API_KEY", "")
+        """Chaves de API podem vir do ambiente."""
+        corr = self.data["correlation"]["online"]
+        if not corr["nvd"].get("api_key"):
+            corr["nvd"]["api_key"] = os.environ.get("NVD_API_KEY", "")
+        if not corr["vulners"].get("api_key"):
+            corr["vulners"]["api_key"] = os.environ.get("VULNERS_API_KEY", "")
 
     def __getitem__(self, key: str) -> Any:
         return self.data[key]
@@ -141,6 +123,6 @@ class Config:
         return node
 
 
-def load_config(path: Optional[str] = None) -> Config:
+def load_config() -> Config:
     """Atalho funcional para Config.load()."""
-    return Config.load(path)
+    return Config.load()

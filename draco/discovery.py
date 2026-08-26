@@ -79,6 +79,7 @@ def discover_host(host: str, cfg, logger=None) -> DiscoveryResult:
     result = DiscoveryResult()
     methods = cfg["discovery"].get("methods", {})
 
+    if not cfg.get("discovery.enabled", True):
         result.status = "UP"
         result.methods_tried.append("desabilitada")
         result.methods_responded.append("descoberta-desabilitada")

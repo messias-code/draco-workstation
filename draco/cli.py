@@ -45,30 +45,10 @@ def build_parser() -> argparse.ArgumentParser:
                         f"Se omitido, usa {DEFAULT_TARGET}.")
     p.add_argument("-f", "--file", default=None,
                    help="Arquivo de alvos (um por linha). Alternativa ao alvo posicional.")
-    # Opcionais (raramente necessários — tudo tem default sensato).
-    p.add_argument("-o", "--output-dir", default=None, help="Onde salvar o relatório.")
-    p.add_argument("-c", "--config", default="config/draco.yaml", help="YAML de config avançada.")
-    p.add_argument("--log-level", default=None, choices=["DEBUG", "INFO", "WARNING", "ERROR"])
-    p.add_argument("--no-online", action="store_true",
-                   help="Só correlação offline (searchsploit); pula NVD/Vulners.")
-    p.add_argument("--no-color", action="store_true", help="Sem cores no terminal.")
-    # Aceito por compatibilidade; a autorização já é implícita ao informar o alvo.
-    p.add_argument("--i-am-authorized", action="store_true", help=argparse.SUPPRESS)
     return p
 
 
-def _apply_overrides(cfg, args) -> None:
-    if args.output_dir:
-        cfg["paths"]["outputs_dir"] = args.output_dir
-    if args.log_level:
-        cfg["logging"]["level"] = args.log_level
-    if args.no_color:
-        cfg["logging"]["color"] = False
-    if args.no_online:
-        cfg["correlation"]["online"]["enabled"] = False
-
-
-def _resolve_targets_file(args, cfg, logger) -> str:
+def _resolve_targets_file(args, logger) -> str:
     """Decide de onde vêm os alvos e devolve um caminho de arquivo de alvos.
 
     Precedência: -f/--file > posicional (arquivo ou alvo único) > alvo padrão.
@@ -102,12 +82,10 @@ def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
 
     try:
-        cfg = load_config(args.config)
+        cfg = load_config()
     except (OSError, ValueError) as exc:
         print(f"[DRACO-ENGINE] [ERRO] Falha ao carregar config: {exc}", file=sys.stderr)
         return 2
-
-    _apply_overrides(cfg, args)
 
     run_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     logger = DracoLogger.from_config(cfg, run_stamp=run_stamp)
@@ -124,7 +102,7 @@ def main(argv=None) -> int:
         logger.close()
         return 2
 
-    targets_file = _resolve_targets_file(args, cfg, logger)
+    targets_file = _resolve_targets_file(args, logger)
 
     # O alvo informado já é auditado — sem lista de permitidos. Só a validação de
     # sintaxe do Épico 1 é aplicada (evita disparar contra entrada malformada).
