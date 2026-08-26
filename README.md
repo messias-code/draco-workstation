@@ -23,13 +23,38 @@ draco 45.33.32.156         # um endereço IP
 draco -f targets.txt       # vários alvos (um por linha)
 ```
 
-É só isso. O `draco` descobre o host, varre as portas, identifica serviços e
+É só isso. O motor não expõe configurações complicadas. Ele inteligentemente descobre o host, varre as portas, identifica serviços e
 versões, correlaciona CVEs e **gera o relatório sozinho**. O laudo sai em
 `outputs/relatorio_draco_<IP>_<DATA>.md`.
 
 > 🔑 **Root é obrigatório.** A varredura sênior (SYN furtivo, masscan, OS
 > fingerprint, evasão) depende de *raw sockets*. O comando `draco` **se eleva
 > sozinho** e pede a senha do seu computador **uma vez**. Sem root, ele não roda.
+
+---
+
+## 🔐 Inteligência Artificial e Bancos de Vulnerabilidades (.env)
+
+O Draco usa bases locais (offline) por padrão, mas é **altamente recomendado** integrá-lo com APIs do governo americano (NVD) e bases privadas (Vulners) para ter relatórios ricos.
+
+Nós usamos um arquivo simples e invisível chamado `.env` na raiz do projeto para isso. Copie o arquivo `.env.example` para `.env` e preencha as chaves:
+
+### Como obter a chave do NVD (NIST):
+O NVD aumentará drasticamente o limite de consultas de vulnerabilidades (CVEs).
+1. Acesse: https://nvd.nist.gov/developers/request-an-api-key
+2. Preencha o formulário rápido com o seu e-mail.
+3. Eles enviarão a chave (um longo código) na sua caixa de entrada (olhe o Spam).
+4. Cole no seu `.env` na linha: `NVD_API_KEY=`
+
+### Como obter a chave do Vulners:
+O Vulners enriquece o relatório encontrando *exploits* públicos super atualizados.
+1. Acesse: https://vulners.com/
+2. Faça Login (Google/GitHub ou cadastre-se).
+3. No canto superior direito, vá no seu perfil > aba **API Keys**.
+4. Crie uma chave de escopo **api**, licença **Free**, e deixe **Bound IP em branco**.
+5. Cole o código gerado no `.env` na linha: `VULNERS_API_KEY=`
+
+O motor do Draco lê esse arquivo nativamente e, automaticamente, utiliza os cabeçalhos de segurança mais atuais (como *X-Api-Key* e a API v2.0 do NVD).
 
 ---
 
@@ -69,7 +94,7 @@ famosas e junta tudo num relatório só.
 | **Nmap** | Investigador: vai **só nas portas abertas** e descobre serviço, versão e SO (com técnicas furtivas). | Conversa em cada janela acesa. |
 | **Nuclei** | Auditor de sites: se houver web (80/443), roda milhares de testes prontos. | Um checklist gigante de defeitos comuns. |
 | **SearchSploit** | Arquivo de falhas **offline** (Exploit-DB local). | O fichário de recalls na oficina. |
-| **O "Cérebro"** | A lógica que **reage** aos achados e consulta o **NVD** (catálogo oficial de CVEs). | O inspetor-chefe que decide o próximo passo. |
+| **O "Cérebro"** | A lógica que **reage** aos achados e consulta o **NVD** e **Vulners** (catálogo oficial de CVEs). | O inspetor-chefe que decide o próximo passo. |
 
 ---
 
@@ -90,8 +115,7 @@ flowchart LR
 
 As setas tracejadas são as **decisões de segurança** do Cérebro: se o host está
 **DOWN**, encerra e gera relatório vazio (não trava); se o Nmap furtivo **não
-recebe resposta** (comum em redes que descartam pacotes fragmentados, como WSL2),
-ele **refaz automaticamente sem fragmentação** — um *fallback de confiabilidade*.
+recebe resposta** ele **refaz automaticamente sem fragmentação** — um *fallback de confiabilidade*.
 
 ---
 
@@ -103,10 +127,9 @@ Testado em Ubuntu/Debian (inclusive WSL2). Um comando prepara tudo:
 ./setup_environment.sh     # binários + venv + registra o comando 'draco'
 ```
 
-Instala `nmap`, `masscan`, `nuclei`, `searchsploit` (base do Exploit-DB via git,
-já que o pacote `exploitdb` saiu dos repositórios recentes do Ubuntu) e cria o
+Instala `nmap`, `masscan`, `nuclei`, `searchsploit` e cria o
 comando global `draco`. A ferramenta **degrada com log claro** se algum binário
-faltar (ex.: sem `masscan`, usa `nmap` para descobrir portas).
+faltar.
 
 ---
 
@@ -125,11 +148,7 @@ draco -f targets.txt       # arquivo de alvos
 3. **Acompanhe os logs** `[DRACO-ENGINE]` na tela (cada passo em tempo real).
 4. **Abra o relatório** em `outputs/relatorio_draco_<IP>_<DATA>.md`.
 
-**Opções (todas opcionais):** `-f/--file <arquivo>`, `-o/--output-dir <dir>`,
-`-c/--config <arquivo>`, `--no-online` (só offline), `--log-level`.
-
-> **Autorização:** o alvo que você digita é auditado direto — sem listas de
-> permitidos, sem burocracia. A responsabilidade é sua: **só aponte o Draco para
+> **Autorização:** o alvo que você digita é auditado direto. A responsabilidade é sua: **só aponte o Draco para
 > alvos que você tem permissão de testar.**
 
 ---
@@ -145,7 +164,7 @@ Exemplo **real** gerado contra `scanme.nmap.org`. As quatro seções, em ordem:
 | 45.33.32.156 | 🟢 UP | Linux 5.0 – 5.5 | 189ms | ICMP / TCP-connect:80 |
 
 A casa está de pé (**UP**), é um Linux, respondeu rápido, confirmado por dois
-métodos. Se estivesse **DOWN**, seria a única tabela preenchida — e tudo bem.
+métodos.
 
 ### 2. Mapeamento de Portas
 
@@ -154,31 +173,20 @@ métodos. Se estivesse **DOWN**, seria a única tabela preenchida — e tudo bem
 | 22 | 🟢 Aberta | `syn-ack` | SSH | OpenSSH 6.6.1p1 |
 | 80 | 🟢 Aberta | `syn-ack` | HTTP | Apache httpd 2.4.7 |
 
-Duas portas abertas. A coluna **Razão** é o detalhe de ouro: `syn-ack` = "o
-servidor respondeu que a porta está aberta". Você também veria `reset` (fechada)
-ou `no-response` (firewall). São versões antigas — é o que a próxima seção explora.
+A coluna **Razão** é o detalhe de ouro: `syn-ack` = "o servidor respondeu que a porta está aberta".
 
-### 3. Vulnerabilidades e CVEs *(60 correlacionadas neste exemplo)*
+### 3. Vulnerabilidades e CVEs
 
 | Porta / Serviço | CVE | Severidade | Fonte | O que é |
 |---|---|---|---|---|
 | 80 · Apache 2.4.7 | CVE-2017-7679 | 🔴 Crítica (9.8) | nvd | Leitura além do buffer no mod_mime. |
-| 22 · OpenSSH 6.6.1 | CVE-2016-1908 | 🔴 Crítica (9.8) | nvd | Encaminhamento X11 vira acesso confiável. |
-| 22 · OpenSSH 6.6.1 | CVE-2015-5600 | 🟠 Alta (8.1) | nvd | Facilita força bruta / negação de serviço. |
-| 22 · OpenSSH 6.6.1 | CVE-2018-15473 | 🟡 Média (5.3) | nvd | Permite descobrir usuários válidos. |
 
-Cada linha é uma falha conhecida. Leia: *"a porta 80 (Apache 2.4.7) tem a falha
-CVE-2017-7679, nota 9.8 — crítica"*. A coluna **Fonte** diz de onde veio (`nvd` =
-catálogo oficial, `searchsploit` = base local, `nuclei` = teste no site). Comece
-**sempre de cima**: as críticas são as de ação imediata. A tabela vem ordenada da
-mais grave para a menos.
+Cada linha é uma falha conhecida. A coluna **Fonte** diz de onde veio (`nvd` =
+catálogo oficial, `vulners` = feeds atualizados de falhas, `searchsploit` = base local).
 
 ### 4. Vetores Recomendados
 
-Próximos passos sugeridos, sempre em nível de **recomendação** (nunca código de
-ataque pronto): ex.: *"Enumeração web na porta 80"*, *"Auditoria SSH / enumeração
-de usuários (CVE-2018-15473)"*. Um apêndice lista **todos os comandos executados**,
-para você auditar exatamente o que a ferramenta fez.
+Próximos passos sugeridos, sempre em nível de **recomendação** defensiva. Um apêndice final lista **todos os comandos executados**, para você auditar exatamente o que a ferramenta fez.
 
 ---
 
@@ -192,51 +200,7 @@ para você auditar exatamente o que a ferramenta fez.
   real, sempre dentro do escopo.
 
 > **A linha que não se cruza:** escanear sem autorização é ilegal na maioria dos
-> países. Use no seu ambiente, em laboratórios, ou no `scanme.nmap.org` (feito
-> para isso). Permissão primeiro, sempre.
-
----
-
-## 🔎 Descoberta de portas: Masscan **ou** Nmap?
-
-Boa pergunta de engenharia. O masscan **não é "pior" que o nmap** — ele tem outro
-papel: é um **localizador de portas** ultrarrápido. A profundidade (versão, SO,
-scripts) vem do **nmap** logo depois, só nas portas que o masscan achou. Esse
-encadeamento *masscan → nmap* é o **padrão profissional**, feito para velocidade.
-
-Quando cada um vence:
-
-| Cenário | Melhor escolha | Por quê |
-|---|---|---|
-| **Poucos alvos, máxima precisão** | **Nmap sozinho** | O nmap retransmite e adapta o timing; erra menos "falso-fechado". |
-| **Muitos alvos / faixas grandes** | **Masscan → Nmap** | O masscan varre 65.535 portas em segundos; o nmap ficaria horas. |
-| **Rede que perde pacotes** | **Nmap sozinho** | Em taxas altas o masscan pode *perder* portas (falso-negativo). |
-
-Como você prioriza **força e resultado** sobre velocidade, para poucos alvos vale
-usar **só o nmap**. É um toque no `config/draco.yaml`:
-
-```yaml
-masscan:
-  enabled: false     # pula o masscan; o nmap faz a descoberta E o detalhamento
-```
-
-Com isso, o nmap varre todas as portas diretamente (mais lento, porém mais
-confiável). O padrão de fábrica mantém o masscan (rápido) + o *fallback* de
-confiabilidade que já corrige o caso de fragmentação descartada.
-
----
-
-## 🥷 Técnicas avançadas de Nmap
-
-Tudo em `config/draco.yaml` (seção `nmap`). Evasão: fragmentação (`-f`), padding
-(`--data-length`), **decoys** (`-D`), **MTU** (`--mtu`), **source-port** (`-g`),
-**spoof-mac**; timing `-T0..T5` (T2/T1 para alvos sensíveis). Profundidade: `-sV`,
-`-O`, `-A`. **NSE** (`nse_scripts: [vulners, http-enum, "smb-vuln*"]`) — e a saída
-é **parseada** para o relatório (CVE+CVSS do `vulners`, `smb-vuln*` como crítico,
-diretórios do `http-enum`).
-
-Scanners alternativos (RustScan, Naabu, Nikto, ZMap) ainda **não** estão
-integrados — peça se quiser algum como backend selecionável.
+> países. Use no seu ambiente, em laboratórios, ou no `scanme.nmap.org`. Permissão primeiro, sempre.
 
 ---
 
@@ -253,20 +217,18 @@ Não tocam a rede nem executam binários reais (usam saídas capturadas em `test
 
 ## 📁 O que é cada arquivo (você não precisa mexer em nada disso)
 
-Você só usa o comando `draco`. Opcionalmente edita `config/draco.yaml`. O resto é
-o motor interno (modular de propósito, para uma futura GUI/API):
+Você só usa o comando `draco`. E coloca as suas chaves opcionais no `.env`. O resto é
+o motor interno que opera de maneira invisível e sem opções pra você se preocupar:
 
 | Caminho | Papel |
 |---|---|
-| `draco.sh` | O lançador (o comando `draco` aponta para cá; eleva a root). |
-| `config/draco.yaml` | Ajustes opcionais (portas, timing, técnicas avançadas). |
+| `draco.sh` | O lançador (o comando `draco` aponta para cá; eleva a root e lê o .env). |
 | `outputs/` | Onde os relatórios `.md` são salvos. |
 | `draco/cli.py` · `engine.py` | Entrada e o "maestro" do pipeline. |
 | `draco/ingest.py` · `discovery.py` | Lê/valida alvos · host UP/DOWN. |
 | `draco/scanner.py` · `parser.py` | masscan+nmap · lê as saídas → dados. |
 | `draco/brain.py` · `correlation.py` | Decide os próximos passos · CVEs. |
 | `draco/reporter.py` | Gera o relatório `.md`. |
-| `draco/config.py` · `logging_engine.py` · `runner.py` · `models.py` | Infra: config, logs, subprocessos seguros, estruturas de dados. |
 
 ---
 
