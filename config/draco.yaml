@@ -38,7 +38,6 @@ logging:
   engine_tag: "DRACO-ENGINE"
   level: INFO                           # DEBUG | INFO | WARNING | ERROR
   console: true                         # imprime logs no terminal
-  file: true                            # grava logs/draco_{datetime}.log
   color: true                           # cores ANSI no console (desligado se não-TTY)
   timestamps: true
 

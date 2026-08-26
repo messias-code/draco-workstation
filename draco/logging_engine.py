@@ -68,7 +68,7 @@ class DracoLogger:
     def from_config(cls, cfg, run_stamp: str | None = None) -> DracoLogger:
         logcfg = cfg["logging"]
         file_path = None
-        if logcfg.get("file", True):
+        if True:
             logs_dir = cfg["paths"]["logs_dir"]
             stamp = run_stamp or datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             file_path = os.path.join(logs_dir, f"draco_{stamp}.log")
