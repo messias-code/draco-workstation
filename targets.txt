@@ -1,0 +1,9 @@
+# Draco-Workstation — arquivo de alvos (Épico 1: Ingestão)
+# Um alvo por linha. Aceita IPv4 e domínios (FQDN).
+# Linhas em branco e comeadas por '#' são ignoradas.
+#
+# IMPORTANTE: um alvo só é auditado se estiver na allowlist de escopo em
+# config/draco.yaml (scope.allowlist) E a execução usar --i-am-authorized.
+#
+# Alvo sancionado para testes (mantido pela Nmap Project para varredura legal):
+scanme.nmap.org

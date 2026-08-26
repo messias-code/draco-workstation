@@ -1,0 +1,11 @@
+# Draco-Workstation — dependências de runtime
+# Mantido enxuto de propósito: a ferramenta ORQUESTRA binários nativos
+# (nmap, masscan, nuclei, searchsploit). As libs abaixo cobrem apenas
+# configuração, requisições HTTP opcionais (NVD/Vulners) e testes.
+
+PyYAML>=6.0            # leitura do config/draco.yaml
+requests>=2.31         # correlação online opcional (NVD / Vulners) — tolerante a falha
+
+# --- desenvolvimento / testes (instale com: pip install -r requirements.txt) ---
+pytest>=8.0
+ruff>=0.5

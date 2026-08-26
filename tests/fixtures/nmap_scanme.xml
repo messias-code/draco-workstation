@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<nmaprun scanner="nmap" args="nmap -sS -sV -O --reason -T2 -f --data-length 24 -oX - 45.33.32.156" start="1690000000" version="7.94">
+  <host starttime="1690000000" endtime="1690000112">
+    <status state="up" reason="echo-reply" reason_ttl="53"/>
+    <address addr="45.33.32.156" addrtype="ipv4"/>
+    <hostnames>
+      <hostname name="scanme.nmap.org" type="user"/>
+      <hostname name="scanme.nmap.org" type="PTR"/>
+    </hostnames>
+    <ports>
+      <port protocol="tcp" portid="22">
+        <state state="open" reason="syn-ack" reason_ttl="53"/>
+        <service name="ssh" product="OpenSSH" version="7.7p1 Ubuntu 4" extrainfo="protocol 2.0" method="probed" conf="10">
+          <cpe>cpe:/a:openbsd:openssh:7.7p1</cpe>
+        </service>
+      </port>
+      <port protocol="tcp" portid="80">
+        <state state="open" reason="syn-ack" reason_ttl="53"/>
+        <service name="http" product="Apache httpd" version="2.4.7" extrainfo="Ubuntu" method="probed" conf="10">
+          <cpe>cpe:/a:apache:http_server:2.4.7</cpe>
+        </service>
+      </port>
+      <port protocol="tcp" portid="139">
+        <state state="closed" reason="reset" reason_ttl="53"/>
+        <service name="netbios-ssn" method="table" conf="3"/>
+      </port>
+      <port protocol="tcp" portid="445">
+        <state state="filtered" reason="no-response" reason_ttl="0"/>
+        <service name="microsoft-ds" method="table" conf="3"/>
+      </port>
+    </ports>
+    <os>
+      <osmatch name="Linux 4.15 - 5.6" accuracy="95"/>
+      <osmatch name="Linux 3.2 - 4.9" accuracy="90"/>
+    </os>
+  </host>
+  <runstats>
+    <finished time="1690000112" elapsed="112.00"/>
+  </runstats>
+</nmaprun>

@@ -1,0 +1,182 @@
+# =============================================================================
+# Draco-Workstation — Configuração central
+# -----------------------------------------------------------------------------
+# PRINCÍPIO DE PROJETO: tudo é configurável. Onde faz sentido auditar de forma
+# mais completa, a ferramenta executa AMBAS as alternativas (ex.: TCP e UDP,
+# correlação offline E online) em vez de escolher uma. Robustez e riqueza de
+# dados têm prioridade sobre velocidade.
+#
+# Nada aqui é hardcoded no código: rates, timings, flags e caminhos vivem neste
+# arquivo. Valores ausentes caem para os defaults seguros de draco/config.py.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# ESCOPO E AUTORIZAÇÃO (gate de segurança — Épico 1)
+# -----------------------------------------------------------------------------
+# Um alvo só é auditado se: (a) estiver na allowlist abaixo E (b) a CLI for
+# chamada com --i-am-authorized. Qualquer alvo fora do escopo => aborta com log.
+# O alvo informado é auditado direto — sem "lista de permitidos". A única checagem
+# é a validação de sintaxe do alvo (Épico 1). Você é responsável por só apontar o
+# Draco para alvos que tem permissão de testar.
+scope:
+  denylist: []                          # opcional: bloqueia estes alvos (IP/CIDR/domínio)
+
+# -----------------------------------------------------------------------------
+# CAMINHOS
+# -----------------------------------------------------------------------------
+paths:
+  targets_file: targets.txt
+  outputs_dir: outputs
+  logs_dir: logs
+  # Nome do relatório: placeholders {ip} {host} {date} {datetime}
+  report_filename: "relatorio_draco_{ip}_{date}.md"
+
+# -----------------------------------------------------------------------------
+# LOGGING (padrão [DRACO-ENGINE])
+# -----------------------------------------------------------------------------
+logging:
+  engine_tag: "DRACO-ENGINE"
+  level: INFO                           # DEBUG | INFO | WARNING | ERROR
+  console: true                         # imprime logs no terminal
+  file: true                            # grava logs/draco_{datetime}.log
+  color: true                           # cores ANSI no console (desligado se não-TTY)
+  timestamps: true
+
+# -----------------------------------------------------------------------------
+# EXECUÇÃO / ORQUESTRAÇÃO
+# -----------------------------------------------------------------------------
+execution:
+  host_concurrency: 4                   # nº de hosts auditados em paralelo
+  privileged: auto                      # auto | true | false  (raw sockets p/ SYN/masscan/-O)
+  # Se 'privileged' resolver p/ false, o motor cai automaticamente para
+  # alternativas sem privilégio (nmap -sT connect scan) e registra no log.
+  fallback_unprivileged: true
+  binaries:                             # caminhos/here-names dos binários orquestrados
+    nmap: nmap
+    masscan: masscan
+    nuclei: nuclei
+    searchsploit: searchsploit
+    ping: ping
+
+# -----------------------------------------------------------------------------
+# ÉPICO 2a — DESCOBERTA DE HOST (discovery.py)
+# Executa TODOS os métodos habilitados e reporta o(s) que responderam.
+# -----------------------------------------------------------------------------
+discovery:
+  enabled: true
+  methods:                             # ordem = ordem de tentativa; todos são reportados
+    icmp_ping: true                    # 'ping' padrão do SO (setuid, sem root)
+    tcp_connect: true                  # fallback: connect() TCP em portas comuns
+  tcp_connect_ports: [80, 443, 22, 21, 3389]
+  icmp:
+    count: 2                           # pacotes por tentativa
+    timeout_seconds: 2
+  tcp:
+    timeout_seconds: 2
+  # Se NENHUM método responder => host marcado DOWN, encerra pipeline p/ o IP,
+  # mas o relatório ainda é gerado (Visão Geral DOWN, tabelas seguintes vazias).
+  mark_down_if_all_fail: true
+
+# -----------------------------------------------------------------------------
+# ÉPICO 2b — MASSCAN (descoberta ultrarrápida de portas)
+# -----------------------------------------------------------------------------
+masscan:
+  enabled: true                        # se indisponível/sem privilégio => usa nmap p/ descobrir portas
+  rate: 500                            # --rate 500 (evita estouro de banda / alertas simples de IDS)
+  ports:
+    tcp: "1-65535"                     # range completo
+    udp: "53,67,123,137,161,500,1900,5353"  # UDP amplo é caro; conjunto configurável
+  scan_udp: true                       # executa AMBOS: TCP e UDP
+  wait_seconds: 3                      # --wait (tempo de espera por respostas tardias)
+  extra_args: []                       # flags adicionais brutas, se desejar
+  timeout_seconds: 1800
+
+# -----------------------------------------------------------------------------
+# ÉPICO 2c — NMAP (scan furtivo + versão + OS fingerprint)
+# Sempre exporta XML (-oX) para parsing estruturado.
+# -----------------------------------------------------------------------------
+nmap:
+  enabled: true
+  # Estratégia furtiva de referência dos PDFs. Cada flag é individualmente
+  # ligável/desligável para máxima configurabilidade.
+  syn_scan: true                       # -sS  (furtivo; requer privilégio)
+  connect_scan_if_unprivileged: true   # -sT  (fallback automático sem root)
+  service_version: true                # -sV
+  os_fingerprint: true                 # -O   (requer privilégio)
+  reason: true                         # --reason  (syn-ack / reset / no-response)
+  # Timing: T0=paranoid, T1=sneaky, T2=polite (furtivo), T3=normal, T4/T5=agressivo.
+  # Para alvos sensíveis/SOC, prefira T2/T1. T5 pode derrubar serviços instáveis.
+  timing_template: 2                   # -T<n>
+  version_intensity: 5                 # --version-intensity
+  skip_host_discovery: true            # -Pn  (descoberta já feita pelo discovery.py)
+  scan_udp: true                       # roda também -sU nas portas UDP abertas (AMBOS)
+
+  # --- Evasão e Stealth (exigem privilégio / raw sockets) ---
+  fragment_packets: true               # -f   (fragmentação IP)
+  data_length: 24                      # --data-length 24 (padding de payload)
+  aggressive: false                    # -A  (SO+versão+scripts; MUITO barulhento — off por padrão)
+  decoys: ""                           # -D  ex.: "RND:5" (5 decoys aleatórios) ou "ip1,ip2,ME"
+  mtu: null                            # --mtu  (múltiplo de 8; engana alguns filtros)
+  source_port: null                    # -g  porta de origem forjada (ex.: 53=DNS, 80=HTTP)
+  spoof_mac: ""                        # --spoof-mac (ex.: "0"=aleatório, "Cisco", ou MAC)
+
+  # --- NSE (Nmap Scripting Engine) — a SAÍDA É PARSEADA para o relatório ---
+  default_scripts: false               # -sC (scripts default)
+  nse_vuln_scripts: false              # atalho legado -> --script vuln
+  nse_scripts: []                      # lista explícita, ex.: [vulners, http-enum, "smb-vuln*", vuln]
+  nse_script_args: ""                  # --script-args (ex.: "http-enum.basepath=/")
+  extra_args: []
+  timeout_seconds: 3600
+
+# -----------------------------------------------------------------------------
+# ÉPICO 3 — O "CÉREBRO" (brain.py) e CORRELAÇÃO (correlation.py)
+# -----------------------------------------------------------------------------
+brain:
+  # Nuclei é disparado quando QUALQUER destas portas estiver aberta:
+  web_ports: [80, 443, 8080, 8443]
+  run_nuclei_on_web: true
+
+nuclei:
+  enabled: true
+  severities: [info, low, medium, high, critical]  # default abrangente p/ relatório rico
+  jsonl: true                          # -jsonl (saída estruturada p/ parsing)
+  rate_limit: 150                      # -rl requisições/seg
+  timeout_seconds: 900
+  extra_args: []
+
+correlation:
+  # OFFLINE-FIRST: searchsploit sempre; online é complementar e tolerante a falha.
+  searchsploit:
+    enabled: true                      # base local do Exploit-DB (funciona sem internet)
+    json: true                         # --json
+    timeout_seconds: 60
+  online:
+    enabled: true                      # AMBOS os provedores abaixo (best-effort)
+    fail_open: true                    # falha de rede NÃO derruba o pipeline
+    timeout_seconds: 10
+    max_retries: 2
+    nvd:
+      enabled: true
+      base_url: "https://services.nvd.nist.gov/rest/json/cves/2.0"
+      api_key: ""                      # opcional; ou via env NVD_API_KEY (eleva rate-limit)
+      results_per_cpe: 20
+    vulners:
+      enabled: true
+      base_url: "https://vulners.com/api/v3/burp/software/"
+      api_key: ""                      # obrigatória p/ Vulners; ou via env VULNERS_API_KEY
+                                        # sem chave => provedor é pulado graciosamente
+
+# -----------------------------------------------------------------------------
+# ÉPICO 4 — RELATÓRIO (reporter.py)
+# -----------------------------------------------------------------------------
+report:
+  format: markdown
+  language: pt-BR
+  use_emoji: true                      # 🟢 UP / 🔴 DOWN / 🟡 Filtrada, etc.
+  include_sections:
+    host_overview: true                # 1. Status Geral do Host
+    ports: true                        # 2. Mapeamento Estruturado de Portas
+    vulnerabilities: true              # 3. Vulnerabilidades e CVEs
+    recommended_vectors: true          # 4. Vetores Recomendados
+    raw_command_log: true              # apêndice com comandos executados (auditabilidade)
+  strategy_label: "Stealth Recon (SYN Scan / T2 / Packet Fragmentation)"

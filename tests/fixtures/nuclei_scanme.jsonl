@@ -1,0 +1,3 @@
+{"template-id":"http-missing-security-headers","info":{"name":"HTTP Missing Security Headers","severity":"low","description":"Ausencia de cabecalhos de seguranca HTTP (X-Frame-Options, Content-Security-Policy)."},"matched-at":"http://scanme.nmap.org"}
+{"template-id":"apache-detect","info":{"name":"Apache HTTP Server Detected","severity":"info","description":"Servidor Apache detectado.","classification":{"cvss-score":0.0}},"matched-at":"http://scanme.nmap.org:80"}
+{"template-id":"CVE-2017-15710","info":{"name":"Apache mod_authnz_ldap Out-of-bounds","severity":"medium","description":"Estouro fora dos limites no mod_authnz_ldap.","classification":{"cvss-score":5.9}},"matched-at":"https://scanme.nmap.org"}

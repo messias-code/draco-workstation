@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "draco-workstation"
+version = "0.1.0"
+description = "Backend CLI de auditoria de redes e mapeamento de vulnerabilidades (orquestração de nmap/masscan/nuclei/searchsploit)."
+requires-python = ">=3.9"
+dependencies = ["PyYAML>=6.0", "requests>=2.31"]
+
+[project.scripts]
+draco = "draco.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["draco*"]
+
+# ---------------------------------------------------------------------------
+# Lint / formatação
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+# E/W pycodestyle, F pyflakes, I isort, B bugbear, UP pyupgrade, SIM simplify
+select = ["E", "W", "F", "I", "B", "UP", "SIM"]
+ignore = [
+    "E501",     # comprimento de linha é tratado pelo line-length; não falhar por isso
+    "SIM115",   # handles de arquivo intencionalmente longevos (log e arquivos temporários
+                # de scan que precisam sobreviver ao bloco); context manager fecharia cedo demais
+]
+
+# ---------------------------------------------------------------------------
+# Testes
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q"
+# Coloca a raiz do projeto no sys.path para que `pytest` (binário) e
+# `python -m pytest` importem o pacote `draco` sem instalação editável.
+pythonpath = ["."]

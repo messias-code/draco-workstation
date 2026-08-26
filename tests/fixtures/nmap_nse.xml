@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<nmaprun scanner="nmap" args="nmap -sS -sV --script vulners,http-enum,smb-vuln* -oX - 45.33.32.156" version="7.94">
+  <host>
+    <status state="up" reason="echo-reply"/>
+    <address addr="45.33.32.156" addrtype="ipv4"/>
+    <ports>
+      <port protocol="tcp" portid="22">
+        <state state="open" reason="syn-ack"/>
+        <service name="ssh" product="OpenSSH" version="7.7p1" method="probed" conf="10">
+          <cpe>cpe:/a:openbsd:openssh:7.7p1</cpe>
+        </service>
+        <script id="vulners" output="cpe:/a:openbsd:openssh:7.7p1: CVE-2018-15473 5.3 https://vulners.com/cve/CVE-2018-15473 CVE-2017-15906 5.3 https://vulners.com/cve/CVE-2017-15906"/>
+      </port>
+      <port protocol="tcp" portid="80">
+        <state state="open" reason="syn-ack"/>
+        <service name="http" product="Apache httpd" version="2.4.7" method="probed" conf="10">
+          <cpe>cpe:/a:apache:http_server:2.4.7</cpe>
+        </service>
+        <script id="http-enum" output="/icons/: Potentially interesting folder w/ directory listing /server-status/: Possible admin folder"/>
+        <script id="http-title" output="Go ahead and ScanMe!"/>
+      </port>
+    </ports>
+    <hostscript>
+      <script id="smb-vuln-ms17-010" output="VULNERABLE: Remote Code Execution vulnerability in Microsoft SMBv1 servers (ms17-010) State: VULNERABLE IDs: CVE:CVE-2017-0143"/>
+    </hostscript>
+  </host>
+</nmaprun>
