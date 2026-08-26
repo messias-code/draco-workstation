@@ -161,10 +161,12 @@ def vulners_lookup(product: str, version: str, cfg, logger=None) -> list[Vulnera
         "software": product,
         "version": version,
         "type": "software",
-        "apiKey": vcfg["api_key"],
+    }
+    headers = {
+        "X-Api-Key": vcfg["api_key"]
     }
     data = _http_get_json(
-        vcfg.get("base_url"), params, {},
+        vcfg.get("base_url"), params, headers,
         timeout=online.get("timeout_seconds", 10),
         retries=online.get("max_retries", 2),
         fail_open=online.get("fail_open", True),
