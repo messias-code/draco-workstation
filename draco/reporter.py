@@ -80,27 +80,26 @@ def render_markdown(report: HostReport, cfg) -> str:
         status_emoji = _emoji(cfg, {"UP": "🟢", "DOWN": "🔴"}, report.discovery.status)
         status_txt = f"{status_emoji} {report.discovery.status}".strip()
         
-        if report.os_matches:
-            # Sort by accuracy descending to ensure we get the best guesses
-            sorted_matches = sorted(report.os_matches, key=lambda m: (m.accuracy or 0), reverse=True)
-            # Take only the top 3 matches to avoid breaking the markdown table visually
-            top_matches = sorted_matches[:3]
-            os_parts = [f"{m.name} ({m.accuracy}%)" if m.accuracy else m.name for m in top_matches]
-            if len(sorted_matches) > 3:
-                os_parts.append(f"... (+{len(sorted_matches) - 3} palpites)")
-            os_txt = "<br>".join(os_parts)
-        else:
-            os_txt = "Indeterminado"
-            
         lines.append("## 1. Status Geral do Host")
         lines.append("")
         lines.append("| Endereço IP | Status | Sistema Operacional Detectado | Tempo de Resposta | Método de Checagem |")
         lines.append("|---|---|---|---|---|")
-        lines.append(
-            f"| {ip} | {status_txt} | {os_txt} | "
-            f"{_fmt_response_time(report.discovery.response_time_ms)} | "
-            f"{report.discovery.method_label} |"
-        )
+        
+        base_resp = _fmt_response_time(report.discovery.response_time_ms)
+        base_meth = report.discovery.method_label
+        
+        if report.os_matches:
+            sorted_matches = sorted(report.os_matches, key=lambda m: (m.accuracy or 0), reverse=True)
+            for i, m in enumerate(sorted_matches):
+                os_name = f"{m.name} ({m.accuracy}%)" if m.accuracy else m.name
+                # Display IP, Status, Response Time, and Method only on the first row
+                if i == 0:
+                    lines.append(f"| {ip} | {status_txt} | {os_name} | {base_resp} | {base_meth} |")
+                else:
+                    lines.append(f"| | | {os_name} | | |")
+        else:
+            lines.append(f"| {ip} | {status_txt} | Indeterminado | {base_resp} | {base_meth} |")
+            
         lines.append("")
         if not report.is_up:
             lines.append(
